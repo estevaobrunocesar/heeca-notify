@@ -8,7 +8,7 @@ import { createHmac, timingSafeEqual } from "node:crypto";
  */
 export const MAX_SKEW_MS = 5 * 60 * 1000;
 
-export function secretFor(product: string, env: NodeJS.ProcessEnv = process.env): string | null {
+export function secretFor(product: string, env: Record<string, string | undefined> = process.env): string | null {
   const key = `NOTIFY_SECRET_${product.toUpperCase().replace(/[^A-Z0-9]/g, "_")}`;
   const s = env[key];
   return s && s.length >= 16 ? s : null;
@@ -20,7 +20,7 @@ export function sign(secret: string, rawBody: string, ts = Date.now()) {
 
 export type AuthResult = { ok: true; product: string } | { ok: false; status: number; error: string };
 
-export function verifyRequest(rawBody: string, headers: Headers, env: NodeJS.ProcessEnv = process.env, now = Date.now()): AuthResult {
+export function verifyRequest(rawBody: string, headers: Headers, env: Record<string, string | undefined> = process.env, now = Date.now()): AuthResult {
   const product = (headers.get("x-heeca-product") ?? "").trim().toLowerCase();
   if (!/^[a-z0-9-]{2,32}$/.test(product)) return { ok: false, status: 401, error: "produto ausente" };
   const secret = secretFor(product, env);
