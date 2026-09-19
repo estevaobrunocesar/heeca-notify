@@ -1,0 +1,75 @@
+// Heeca Notify — serviço central de notificações (WhatsApp) da plataforma.
+// Os produtos NÃO falam com a Meta: mandam "template X para este telefone com estas variáveis"
+// e recebem de volta status e respostas por callback assinado. Um banco só do Notify.
+
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum MessageStatus {
+  QUEUED
+  SENDING
+  SENT
+  DELIVERED
+  READ
+  FAILED
+  SKIPPED // opt-out, telefone inválido, cota
+}
+
+/// Uma mensagem pedida por um produto. `providerMessageId` é o id na Meta (ou console_…).
+model Message {
+  id         String        @id @default(cuid())
+  product    String // slug do produto que pediu (nail, lash, dental…)
+  tenantId   String // estabelecimento dentro do produto (para cota e relatório)
+  tenantName String?
+  to         String // E.164
+  kind       String // "free" | "template"
+  body       String // texto final renderizado (log e provedor console)
+  payload    Json // OutboundMessage | TemplateMessage, como o produto mandou
+  ref        String? // referência do produto (ex.: id do agendamento)
+  callbackUrl String? // para onde devolver status/respostas (assinado com o segredo do produto)
+
+  status            MessageStatus @default(QUEUED)
+  providerMessageId String?       @unique
+  error             String?
+  attempts          Int           @default(0)
+  nextAttemptAt     DateTime      @default(now())
+  sentAt            DateTime?
+  createdAt         DateTime      @default(now())
+  updatedAt         DateTime      @updatedAt
+
+  @@index([status, nextAttemptAt])
+  @@index([product, tenantId, createdAt])
+  @@index([to, createdAt])
+}
+
+/// Registro de consentimento por telefone. Opt-out ("PARAR") bloqueia envios de todos os produtos.
+model Contact {
+  phone     String    @id // E.164
+  optedOut  Boolean   @default(false)
+  optOutAt  DateTime?
+  lastProduct String?
+  lastTenantId String?
+  updatedAt DateTime  @updatedAt
+}
+
+/// Eventos recebidos da Meta (respostas e status) e o que foi feito com eles — auditoria.
+model InboundEvent {
+  id                String   @id @default(cuid())
+  type              String // status | button_reply | text
+  phone             String?
+  providerMessageId String
+  payload           Json
+  messageId         String? // Message roteada
+  product           String?
+  delivered         Boolean  @default(false) // callback ao produto respondeu 2xx
+  error             String?
+  createdAt         DateTime @default(now())
+
+  @@index([createdAt])
+}
