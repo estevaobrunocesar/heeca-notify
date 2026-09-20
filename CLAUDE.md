@@ -8,4 +8,5 @@ Leia o README.md (contrato e estrutura). Regras:
 4. **Eventos são transparentes**: o corpo do callback é o mesmo `InboundEvent` que os produtos já tratavam vindo da Meta — payloads de botão (`confirm:<token>`) passam intactos.
 5. **Opt-out é global** ("PARAR"): bloqueia o telefone para todos os produtos; produtos podem registrar/consultar em `/api/v1/contacts`.
 6. Sem interface: métricas em `/api/v1/stats`; saúde em `/api/health` (`degraded` = fila parada).
-7. Regras puras em `rules.ts`/`auth.ts` com testes (`npm test`, node:test + tsx). Idioma pt-BR.
+7. **Templates unificados** em `templates.ts` (fonte da verdade da plataforma; `docs/TEMPLATES-META.md` e `scripts/meta-templates.mjs` derivam dele). `enqueue` valida nome/parâmetros/botões e prefixa botões de URL com o produto (portal redireciona em `/a/` e `/p/`). Mudar texto de template aprovado = novo nome.
+8. Regras puras em `rules.ts`/`auth.ts` com testes (`npm test`, node:test + tsx). Idioma pt-BR.

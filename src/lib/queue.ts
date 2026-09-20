@@ -6,6 +6,7 @@ import { getProvider } from "./providers";
 import { isPermanentError, MAX_ATTEMPTS, nextAttempt, normalizePhone } from "./rules";
 import { deliverCallback } from "./callbacks";
 import type { OutboundMessage, TemplateMessage } from "./provider";
+import { validateTemplate } from "./templates";
 
 /**
  * Fila de envio. `enqueue` só grava (rápido, dentro da requisição do produto); o worker
@@ -37,7 +38,15 @@ export async function enqueue(product: string, input: EnqueueInput) {
     const usados = await db.message.count({ where: { product, tenantId: input.tenantId, createdAt: { gte: inicioMes }, status: { notIn: ["SKIPPED", "FAILED"] } } });
     if (usados >= quota) skip = `cota mensal do estabelecimento atingida (${quota})`;
   }
-  const { kind, ...payload } = input.message;
+  if (input.message.kind === "template") {
+    const erro = validateTemplate(input.message.name, input.message.bodyParams, input.message.buttons ?? []);
+    if (erro) throw new EnqueueError(erro);
+  }
+  // Botões de URL: a base é o redirecionador do portal (heeca.com.br/a/… ou /p/…); o sufixo vira "<produto>/<o que o produto mandou>"
+  const mensagem = input.message.kind === "template"
+    ? { ...input.message, buttons: input.message.buttons?.map((b) => (b.type === "url" ? { ...b, text: `${product}/${b.text}` } : b)) }
+    : input.message;
+  const { kind, ...payload } = mensagem;
   return db.message.create({
     data: {
       product, tenantId: input.tenantId, tenantName: input.tenantName, to, kind, body: input.message.body, payload: { ...payload, to }, ref: input.ref, callbackUrl: input.callbackUrl,
