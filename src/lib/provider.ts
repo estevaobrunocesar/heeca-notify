@@ -21,8 +21,11 @@ export interface WhatsappProvider {
   healthCheck(): Promise<ProviderHealth>;
 }
 
-/** Evento normalizado (mesmo formato que os produtos já tratam em handleEvent). */
-export type InboundEvent =
+/**
+ * Evento normalizado (mesmo formato que os produtos já tratam em handleEvent). No callback ao produto vai
+ * acrescido de `tenantId`/`ref` da mensagem de origem (roteamento em produtos sem número por estabelecimento).
+ */
+export type InboundEvent = ({ tenantId?: string; ref?: string }) & (
   | { type: "button_reply"; from: string; buttonId: string; providerMessageId: string; contextMessageId?: string }
   | { type: "text"; from: string; text: string; providerMessageId: string; contextMessageId?: string }
-  | { type: "status"; providerMessageId: string; status: "sent" | "delivered" | "read" | "failed"; error?: string };
+  | { type: "status"; providerMessageId: string; status: "sent" | "delivered" | "read" | "failed"; error?: string });

@@ -19,7 +19,7 @@ Cabeçalhos: `X-Heeca-Product: nail`, `X-Heeca-Timestamp: <ms>`, `X-Heeca-Signat
 | GET | `/api/v1/stats` | contagem do mês por status e por estabelecimento |
 | GET/POST | `/api/webhooks/meta` | webhook da Meta (verify token + `X-Hub-Signature-256`) |
 
-**Notify → produto** (`callbackUrl`, assinado com o mesmo segredo, `X-Heeca-Product` = produto): o corpo é um `InboundEvent` — `{ type: "status", providerMessageId, status, error? }`, `{ type: "button_reply", from, buttonId, providerMessageId }` ou `{ type: "text", from, text, providerMessageId }`. `providerMessageId` de status = o `id` que o Notify devolveu no envio. O produto responde 2xx; erro = o Notify reenvia por 24 h.
+**Notify → produto** (`callbackUrl`, assinado com o mesmo segredo, `X-Heeca-Product` = produto): o corpo é um `InboundEvent` — `{ type: "status", providerMessageId, status, error? }`, `{ type: "button_reply", from, buttonId, providerMessageId }` ou `{ type: "text", from, text, providerMessageId }` — sempre com `tenantId` e `ref` da mensagem de origem. `providerMessageId` de status = o `id` que o Notify devolveu no envio. O produto responde 2xx; erro = o Notify reenvia por 24 h.
 
 Roteamento de respostas: pela mensagem a que o cliente respondeu (`context.id` da Meta) ou, sem contexto, pela última mensagem enviada àquele telefone.
 
