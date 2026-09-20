@@ -6,7 +6,7 @@ import { getProvider } from "./providers";
 import { isPermanentError, MAX_ATTEMPTS, nextAttempt, normalizePhone } from "./rules";
 import { deliverCallback } from "./callbacks";
 import type { OutboundMessage, TemplateMessage } from "./provider";
-import { validateTemplate } from "./templates";
+import { TEMPLATES, validateTemplate } from "./templates";
 
 /**
  * Fila de envio. `enqueue` só grava (rápido, dentro da requisição do produto); o worker
@@ -42,8 +42,9 @@ export async function enqueue(product: string, input: EnqueueInput) {
     const erro = validateTemplate(input.message.name, input.message.bodyParams, input.message.buttons ?? []);
     if (erro) throw new EnqueueError(erro);
   }
-  // Botões de URL: a base é o redirecionador do portal (heeca.com.br/a/… ou /p/…); o sufixo vira "<produto>/<o que o produto mandou>"
-  const mensagem = input.message.kind === "template"
+  // Botões de URL dos templates UNIFICADOS: a base é o redirecionador do portal (heeca.com.br/a/… ou /p/…) e o sufixo vira
+  // "<produto>/<o que o produto mandou>". Templates específicos de produto usam o host do próprio produto como base: sufixo intacto.
+  const mensagem = input.message.kind === "template" && input.message.name in TEMPLATES
     ? { ...input.message, buttons: input.message.buttons?.map((b) => (b.type === "url" ? { ...b, text: `${product}/${b.text}` } : b)) }
     : input.message;
   const { kind, ...payload } = mensagem;
