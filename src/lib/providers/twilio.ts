@@ -18,20 +18,29 @@ const API = "https://api.twilio.com/2010-04-01";
  *    `TWILIO_CONTENT_SID_<NOME_EM_MAIUSCULO>` (mesmo padrão de segredo-por-chave de NOTIFY_SECRET_<PRODUTO>).
  *    Falta o mapeamento de um template = erro claro, não silêncio.
  *
- * Variáveis: TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN, TWILIO_WHATSAPP_FROM (E.164, sem "whatsapp:").
+ * Variáveis: TWILIO_ACCOUNT_SID sempre (identifica a conta na URL) + uma credencial de auth:
+ * TWILIO_API_KEY_SID/TWILIO_API_KEY_SECRET (recomendado — revogável sozinha, sem trocar a
+ * credencial mestra da conta se vazar) ou TWILIO_AUTH_TOKEN (a mestra, mais simples). A API Key
+ * ganha se as duas existirem. TWILIO_WHATSAPP_FROM em E.164, sem "whatsapp:".
  */
 export class TwilioProvider implements WhatsappProvider {
   readonly name = "twilio";
+  private readonly authUser: string;
+  private readonly authPass: string;
   constructor(
     private readonly accountSid = process.env.TWILIO_ACCOUNT_SID ?? "",
-    private readonly authToken = process.env.TWILIO_AUTH_TOKEN ?? "",
     private readonly from = process.env.TWILIO_WHATSAPP_FROM ?? "",
   ) {
-    if (!this.accountSid || !this.authToken || !this.from) throw new Error("TWILIO_ACCOUNT_SID / TWILIO_AUTH_TOKEN / TWILIO_WHATSAPP_FROM não configurados");
+    const apiKeySid = process.env.TWILIO_API_KEY_SID ?? "";
+    const apiKeySecret = process.env.TWILIO_API_KEY_SECRET ?? "";
+    const authToken = process.env.TWILIO_AUTH_TOKEN ?? "";
+    if (apiKeySid && apiKeySecret) { this.authUser = apiKeySid; this.authPass = apiKeySecret; }
+    else { this.authUser = accountSid; this.authPass = authToken; }
+    if (!this.accountSid || !this.authPass || !this.from) throw new Error("TWILIO_ACCOUNT_SID / (TWILIO_API_KEY_SID+SECRET ou TWILIO_AUTH_TOKEN) / TWILIO_WHATSAPP_FROM não configurados");
   }
 
   private auth() {
-    return "Basic " + Buffer.from(`${this.accountSid}:${this.authToken}`).toString("base64");
+    return "Basic " + Buffer.from(`${this.authUser}:${this.authPass}`).toString("base64");
   }
 
   private async post<T>(path: string, form: Record<string, string>): Promise<T> {
