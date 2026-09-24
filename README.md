@@ -18,6 +18,7 @@ Cabeçalhos: `X-Heeca-Product: nail`, `X-Heeca-Timestamp: <ms>`, `X-Heeca-Signat
 | POST/GET | `/api/v1/contacts` | `{ phone, optedOut }` / `?phone=` |
 | GET | `/api/v1/stats` | contagem do mês por status e por estabelecimento |
 | GET/POST | `/api/webhooks/meta` | webhook da Meta (verify token + `X-Hub-Signature-256`) |
+| POST | `/api/webhooks/twilio` | webhook da Twilio, só quando `WHATSAPP_PROVIDER=twilio` (`X-Twilio-Signature`) |
 
 **Notify → produto** (`callbackUrl`, assinado com o mesmo segredo, `X-Heeca-Product` = produto): o corpo é um `InboundEvent` — `{ type: "status", providerMessageId, status, error? }`, `{ type: "button_reply", from, buttonId, providerMessageId }` ou `{ type: "text", from, text, providerMessageId }` — sempre com `tenantId` e `ref` da mensagem de origem. `providerMessageId` de status = o `id` que o Notify devolveu no envio. O produto responde 2xx; erro = o Notify reenvia por 24 h.
 
@@ -36,4 +37,4 @@ Produção: `Dockerfile` (standalone + `prisma migrate deploy` no boot), app `he
 
 ## Estrutura
 
-`src/lib/auth.ts` (HMAC por produto) · `rules.ts` (backoff, opt-out, E.164 — puros, testados) · `queue.ts` (enfileirar, worker) · `callbacks.ts` (devolver ao produto, reenvio) · `inbound.ts` (roteamento) · `providers/{console,meta}.ts` · `worker.ts` (boot).
+`src/lib/auth.ts` (HMAC por produto) · `rules.ts` (backoff, opt-out, E.164 — puros, testados) · `queue.ts` (enfileirar, worker) · `callbacks.ts` (devolver ao produto, reenvio) · `inbound.ts` (roteamento) · `providers/{console,meta,twilio}.ts` · `worker.ts` (boot).

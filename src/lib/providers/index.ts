@@ -1,10 +1,12 @@
 import type { WhatsappProvider } from "../provider";
 import { ConsoleProvider } from "./console";
 import { MetaCloudProvider } from "./meta";
+import { TwilioProvider } from "./twilio";
 
 let cached: WhatsappProvider | null = null;
 export function getProvider(): WhatsappProvider {
   if (cached) return cached;
-  cached = (process.env.WHATSAPP_PROVIDER ?? "console").toLowerCase() === "meta" ? new MetaCloudProvider() : new ConsoleProvider();
+  const name = (process.env.WHATSAPP_PROVIDER ?? "console").toLowerCase();
+  cached = name === "meta" ? new MetaCloudProvider() : name === "twilio" ? new TwilioProvider() : new ConsoleProvider();
   return cached;
 }
