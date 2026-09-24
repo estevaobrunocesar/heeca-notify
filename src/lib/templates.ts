@@ -102,7 +102,7 @@ export function renderBody(spec: TemplateSpec, params: string[]) {
 export function validateTemplate(name: string, bodyParams: string[], buttons: { type: string }[] = []): string | null {
   if (!/^heeca_[a-z0-9_]+$/.test(name)) return `nome de template inválido: ${name}`;
   const spec = TEMPLATES[name];
-  if (!spec) return /^heeca_(nail|lash|massage|brow|cut|dental|beauty|wellness|ink|piercing|skin|store|ticket|invoice|move|mind)_/.test(name) ? null : `template ${name} não está no catálogo unificado`;
+  if (!spec) return /^heeca_(nail|lash|massage|brow|cut|dental|beauty|wellness|ink|piercing|skin|store|ticket|invoice|move|mind|nutri|bronze)_/.test(name) ? null : `template ${name} não está no catálogo unificado`;
   if (bodyParams.length !== spec.params.length) return `${name} espera ${spec.params.length} parâmetro(s) (${spec.params.join(", ")}), recebeu ${bodyParams.length}`;
   const esperados = (spec.buttons ?? []).map((b) => b.type).join(",");
   const recebidos = buttons.map((b) => b.type).join(",");
