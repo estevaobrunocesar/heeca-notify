@@ -63,7 +63,7 @@ export class TwilioProvider implements WhatsappProvider {
     const to = message.to.replace(/\D/g, "");
     // Sem Content API, botão ad-hoc não existe na Twilio — degrada para lista numerada em texto.
     const body = message.buttons?.length ? `${message.body}\n\n${message.buttons.map((b, i) => `${i + 1}. ${b.title}`).join("\n")}` : message.body;
-    const json = await this.post<{ sid: string }>("Messages.json", { From: `whatsapp:${this.from}`, To: `whatsapp:+${to}`, Body: body });
+    const json = await this.post<{ sid: string }>(`Accounts/${this.accountSid}/Messages.json`, { From: `whatsapp:${this.from}`, To: `whatsapp:+${to}`, Body: body });
     return { providerMessageId: json.sid };
   }
 
@@ -82,7 +82,7 @@ export class TwilioProvider implements WhatsappProvider {
     const urlButton = message.buttons?.find((b) => b.type === "url");
     if (urlButton) variables[String(message.bodyParams.length + 1)] = urlButton.text;
     const to = message.to.replace(/\D/g, "");
-    const json = await this.post<{ sid: string }>("Messages.json", {
+    const json = await this.post<{ sid: string }>(`Accounts/${this.accountSid}/Messages.json`, {
       From: `whatsapp:${this.from}`,
       To: `whatsapp:+${to}`,
       ContentSid: contentSid,
