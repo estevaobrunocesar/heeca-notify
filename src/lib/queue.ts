@@ -39,7 +39,7 @@ export async function enqueue(product: string, input: EnqueueInput) {
     if (usados >= quota) skip = `cota mensal do estabelecimento atingida (${quota})`;
   }
   if (input.message.kind === "template") {
-    const erro = validateTemplate(input.message.name, input.message.bodyParams, input.message.buttons ?? []);
+    const erro = validateTemplate(product, input.message.name, input.message.bodyParams, input.message.buttons ?? []);
     if (erro) throw new EnqueueError(erro);
   }
   // Botões de URL dos templates UNIFICADOS: a base é o redirecionador do portal (heeca.com.br/a/… ou /p/…) e o sufixo vira

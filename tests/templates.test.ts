@@ -18,12 +18,14 @@ describe("catálogo unificado", () => {
     assert.equal(renderBody(TEMPLATES.heeca_remarcado, ["Studio", "Gel", "21/09", "15:00"]), "Aviso de Studio: seu horário de Gel foi remarcado para 21/09 às 15:00. Qualquer dúvida, responda esta mensagem.");
   });
   it("validação: nome fora do catálogo, contagem de params e botões", () => {
-    assert.equal(validateTemplate("heeca_lembrete", ["a", "b", "c", "d", "e"], [{ type: "quick_reply" }, { type: "quick_reply" }]), null);
-    assert.match(validateTemplate("heeca_lembrete", ["a"], []) ?? "", /espera 5/);
-    assert.match(validateTemplate("heeca_lembrete", ["a", "b", "c", "d", "e"], []) ?? "", /botões/);
-    assert.match(validateTemplate("heeca_inventado", [], []) ?? "", /catálogo/);
-    assert.equal(validateTemplate("heeca_ink_orcamento", ["x"], []), null); // específico de produto: passa
-    assert.match(validateTemplate("Promo!", [], []) ?? "", /inválido/);
+    assert.equal(validateTemplate("ink", "heeca_lembrete", ["a", "b", "c", "d", "e"], [{ type: "quick_reply" }, { type: "quick_reply" }]), null);
+    assert.match(validateTemplate("ink", "heeca_lembrete", ["a"], []) ?? "", /espera 5/);
+    assert.match(validateTemplate("ink", "heeca_lembrete", ["a", "b", "c", "d", "e"], []) ?? "", /botões/);
+    assert.match(validateTemplate("ink", "heeca_inventado", [], []) ?? "", /catálogo/);
+    assert.equal(validateTemplate("ink", "heeca_ink_orcamento", ["x"], []), null); // específico de produto: passa
+    assert.match(validateTemplate("kids", "heeca_ink_orcamento", ["x"], []) ?? "", /catálogo/); // produto errado: não passa
+    assert.equal(validateTemplate("kids", "heeca_kids_matricula", ["x"], []), null); // Kids agora passa (achado real 28/09: lista fixa não incluía kids/atelier/pet/make/service)
+    assert.match(validateTemplate("ink", "Promo!", [], []) ?? "", /inválido/);
   });
 });
 

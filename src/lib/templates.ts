@@ -97,12 +97,14 @@ export function renderBody(spec: TemplateSpec, params: string[]) {
 
 /**
  * Valida uma mensagem de template contra o catálogo: nome `heeca_*` sem sufixo de produto precisa
- * existir aqui com o número certo de parâmetros e botões. Nomes de produto (`heeca_ink_*`) passam.
+ * existir aqui com o número certo de parâmetros e botões. Nome do próprio produto (`heeca_<product>_*`)
+ * passa — comparado contra o `product` autenticado da chamada, não uma lista fixa (uma lista fixa já
+ * ficou desatualizada uma vez e bloqueou templates de Kids/Atelier/Pet/Make/Service).
  */
-export function validateTemplate(name: string, bodyParams: string[], buttons: { type: string }[] = []): string | null {
+export function validateTemplate(product: string, name: string, bodyParams: string[], buttons: { type: string }[] = []): string | null {
   if (!/^heeca_[a-z0-9_]+$/.test(name)) return `nome de template inválido: ${name}`;
   const spec = TEMPLATES[name];
-  if (!spec) return /^heeca_(nail|lash|massage|brow|cut|dental|beauty|wellness|ink|piercing|skin|store|ticket|invoice|move|mind|nutri|bronze)_/.test(name) ? null : `template ${name} não está no catálogo unificado`;
+  if (!spec) return name.startsWith(`heeca_${product}_`) ? null : `template ${name} não está no catálogo unificado`;
   if (bodyParams.length !== spec.params.length) return `${name} espera ${spec.params.length} parâmetro(s) (${spec.params.join(", ")}), recebeu ${bodyParams.length}`;
   const esperados = (spec.buttons ?? []).map((b) => b.type).join(",");
   const recebidos = buttons.map((b) => b.type).join(",");
