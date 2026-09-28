@@ -44,10 +44,10 @@ export const TEMPLATES: Record<string, TemplateSpec> = {
   },
   heeca_confirmado: {
     name: "heeca_confirmado", category: "UTILITY", language: "pt_BR",
-    body: "Horário confirmado ✅ {{1}}: {{2}} com {{3}}, {{4}} às {{5}}. {{6}}Até lá!",
+    body: "Horário confirmado ✅ Seu atendimento em *{{1}}* está garantido: serviço {{2}}, com {{3}}, no dia {{4}} às {{5}} horas. {{6}}Estamos te esperando, até lá!",
     params: ["estabelecimento", "servico", "profissional", "data", "hora", "orientacoes"],
     example: ["Studio Ana", "Alongamento em gel", "Ana", "20/09/2026", "14:00", "Chegue alguns minutos antes. "],
-    quando: "quando o horário é confirmado (orientações pré-atendimento podem ir vazias: enviar \" \")",
+    quando: "quando o horário é confirmado (orientações pré-atendimento podem ir vazias: enviar \" \") — corpo alongado em 28/09 (rejeição da Meta: \"too many variables for its length\")",
   },
   heeca_lembrete: {
     name: "heeca_lembrete", category: "UTILITY", language: "pt_BR",
