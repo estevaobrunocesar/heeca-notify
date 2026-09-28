@@ -77,6 +77,10 @@ export class TwilioProvider implements WhatsappProvider {
     if (!contentSid) throw new Error(`${key} não configurado — cadastre o template "${message.name}" como Content Template na Twilio e aponte o ContentSid aqui.`);
     const variables: Record<string, string> = {};
     message.bodyParams.forEach((v, i) => { variables[String(i + 1)] = v.replace(/\s*\n\s*/g, " "); });
+    // Botão de URL: mesma variável de sufixo cadastrada em scripts/twilio-create-templates.mjs,
+    // um índice depois do último parâmetro do corpo (numeração é única e compartilhada entre corpo e ações no Content API).
+    const urlButton = message.buttons?.find((b) => b.type === "url");
+    if (urlButton) variables[String(message.bodyParams.length + 1)] = urlButton.text;
     const to = message.to.replace(/\D/g, "");
     const json = await this.post<{ sid: string }>("Messages.json", {
       From: `whatsapp:${this.from}`,
@@ -87,11 +91,15 @@ export class TwilioProvider implements WhatsappProvider {
     return { providerMessageId: json.sid };
   }
 
+  /**
+   * `Accounts/{Sid}.json` (dados da conta) fica fora do escopo de uma API Key "Standard" — só o
+   * Auth Token mestre lê isso. `Messages.json` é o mesmo endpoint usado para enviar, então serve
+   * de teste real de que a credencial configurada consegue fazer o que o provider precisa fazer.
+   */
   async healthCheck(): Promise<ProviderHealth> {
     try {
-      const acc = await this.get<{ status?: string; friendly_name?: string }>(`Accounts/${this.accountSid}.json`);
-      if (acc.status && acc.status !== "active") return { ok: false, error: `conta Twilio com status "${acc.status}"` };
-      return { ok: true, phoneNumber: this.from, verifiedName: acc.friendly_name };
+      await this.get<{ messages?: unknown[] }>(`Accounts/${this.accountSid}/Messages.json?PageSize=1`);
+      return { ok: true, phoneNumber: this.from };
     } catch (err) {
       return { ok: false, error: err instanceof Error ? err.message : String(err) };
     }
