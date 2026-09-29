@@ -15,7 +15,7 @@ describe("catálogo unificado", () => {
     }
   });
   it("renderBody preenche na ordem", () => {
-    assert.equal(renderBody(TEMPLATES.heeca_remarcado, ["Studio", "Gel", "21/09", "15:00"]), "Aviso de Studio: seu horário de Gel foi remarcado para 21/09 às 15:00. Qualquer dúvida, responda esta mensagem.");
+    assert.equal(renderBody(TEMPLATES.heeca_remarcado, ["Studio", "Gel", "21/09", "15:00"]), "Aviso de Studio: Seu horário de Gel foi remarcado para 21/09 às 15:00. Qualquer dúvida, responda esta mensagem.");
   });
   it("validação: nome fora do catálogo, contagem de params e botões", () => {
     assert.equal(validateTemplate("ink", "heeca_lembrete", ["a", "b", "c", "d", "e"], [{ type: "quick_reply" }, { type: "quick_reply" }]), null);

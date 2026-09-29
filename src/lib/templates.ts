@@ -36,7 +36,7 @@ export const PORTAL = "https://heeca.com.br";
 export const TEMPLATES: Record<string, TemplateSpec> = {
   heeca_confirmacao: {
     name: "heeca_confirmacao", category: "UTILITY", language: "pt_BR",
-    body: "Olá, {{1}}! {{2}} recebeu sua solicitação: {{3}} com {{4}}, {{5}} às {{6}}. Toque em Confirmar para garantir seu horário.",
+    body: "Mensagem de {{2}}: Olá, {{1}}! Recebemos sua solicitação: {{3}} com {{4}}, {{5}} às {{6}}. Toque em Confirmar para garantir seu horário.",
     params: ["cliente", "estabelecimento", "servico", "profissional", "data", "hora"],
     buttons: [{ type: "quick_reply", text: "Confirmar" }, { type: "quick_reply", text: "Remarcar" }, { type: "quick_reply", text: "Cancelar" }],
     example: ["Maria", "Studio Ana", "Alongamento em gel", "Ana", "20/09/2026", "14:00"],
@@ -44,14 +44,14 @@ export const TEMPLATES: Record<string, TemplateSpec> = {
   },
   heeca_confirmado: {
     name: "heeca_confirmado", category: "UTILITY", language: "pt_BR",
-    body: "Horário confirmado ✅ Seu atendimento em *{{1}}* está garantido: serviço {{2}}, com {{3}}, no dia {{4}} às {{5}} horas. {{6}}Estamos te esperando, até lá!",
+    body: "Mensagem de {{1}}: Horário confirmado ✅ Seu atendimento: serviço {{2}}, com {{3}}, no dia {{4}} às {{5}} horas. {{6}}Estamos te esperando, até lá!",
     params: ["estabelecimento", "servico", "profissional", "data", "hora", "orientacoes"],
     example: ["Studio Ana", "Alongamento em gel", "Ana", "20/09/2026", "14:00", "Chegue alguns minutos antes. "],
-    quando: "quando o horário é confirmado (orientações pré-atendimento podem ir vazias: enviar \" \") — corpo alongado em 28/09 (rejeição da Meta: \"too many variables for its length\")",
+    quando: "quando o horário é confirmado (orientações pré-atendimento podem ir vazias: enviar \" \") — corpo alongado em 28/09 (rejeição da Meta: \"too many variables for its length\"), reestruturado em 29/09 pra identificação do remetente logo no início (feedback do suporte Twilio) sem começar com variável (regra do teste \"regras de aprovação da Meta\")",
   },
   heeca_lembrete: {
     name: "heeca_lembrete", category: "UTILITY", language: "pt_BR",
-    body: "Oi, {{1}}! Lembrete de {{2}}: {{3}}, {{4}} às {{5}}. Se precisar mudar, use os botões abaixo.",
+    body: "Mensagem de {{2}}: Oi, {{1}}! Lembrete do seu horário de {{3}}, {{4}} às {{5}}. Se precisar mudar, use os botões abaixo.",
     params: ["cliente", "estabelecimento", "servico", "quando", "hora"],
     buttons: [{ type: "quick_reply", text: "Remarcar" }, { type: "quick_reply", text: "Cancelar" }],
     example: ["Maria", "Studio Ana", "Alongamento em gel", "amanhã", "14:00"],
@@ -59,7 +59,7 @@ export const TEMPLATES: Record<string, TemplateSpec> = {
   },
   heeca_cancelado: {
     name: "heeca_cancelado", category: "UTILITY", language: "pt_BR",
-    body: "Aviso de {{1}}: seu horário de {{2}}, {{3}} às {{4}}, foi cancelado. Para marcar de novo, é só tocar no botão.",
+    body: "Aviso de {{1}}: Seu horário de {{2}}, {{3}} às {{4}}, foi cancelado. Para marcar de novo, é só tocar no botão.",
     params: ["estabelecimento", "servico", "data", "hora"],
     buttons: [{ type: "url", text: "Agendar novamente", base: `${PORTAL}/a/` }],
     example: ["Studio Ana", "Alongamento em gel", "20/09/2026", "14:00"],
@@ -67,14 +67,14 @@ export const TEMPLATES: Record<string, TemplateSpec> = {
   },
   heeca_remarcado: {
     name: "heeca_remarcado", category: "UTILITY", language: "pt_BR",
-    body: "Aviso de {{1}}: seu horário de {{2}} foi remarcado para {{3}} às {{4}}. Qualquer dúvida, responda esta mensagem.",
+    body: "Aviso de {{1}}: Seu horário de {{2}} foi remarcado para {{3}} às {{4}}. Qualquer dúvida, responda esta mensagem.",
     params: ["estabelecimento", "servico", "data", "hora"],
     example: ["Studio Ana", "Alongamento em gel", "21/09/2026", "15:00"],
     quando: "reagendamento",
   },
   heeca_sinal: {
     name: "heeca_sinal", category: "UTILITY", language: "pt_BR",
-    body: "Olá, {{1}}! Para garantir seu horário de {{2}} em {{3}}, {{4}} às {{5}}, pague o sinal de {{6}} via Pix em até {{7}}. Toque no botão para ver o QR Code.",
+    body: "Mensagem de {{3}}: Olá, {{1}}! Para garantir seu horário de {{2}}, {{4}} às {{5}}, pague o sinal de {{6}} via Pix em até {{7}}. Toque no botão para ver o QR Code.",
     params: ["cliente", "servico", "estabelecimento", "data", "hora", "valor_sinal", "prazo_pagamento"],
     buttons: [{ type: "url", text: "Pagar sinal", base: `${PORTAL}/p/` }],
     example: ["Maria", "Alongamento em gel", "Studio Ana", "20/09/2026", "14:00", "R$ 20,00", "30 minutos"],
@@ -82,7 +82,7 @@ export const TEMPLATES: Record<string, TemplateSpec> = {
   },
   heeca_retorno: {
     name: "heeca_retorno", category: "UTILITY", language: "pt_BR",
-    body: "Oi, {{1}}! Aqui é {{2}}. {{3}} Quer reservar seu próximo horário? É só tocar no botão.",
+    body: "Mensagem de {{2}}: Oi, {{1}}! {{3}} Quer reservar seu próximo horário? É só tocar no botão.",
     params: ["cliente", "estabelecimento", "convite"],
     buttons: [{ type: "url", text: "Agendar", base: `${PORTAL}/a/` }],
     example: ["Maria", "Studio Ana", "Está chegando o momento de renovar suas unhas."],
