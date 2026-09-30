@@ -16,6 +16,7 @@ Cabeçalhos: `X-Heeca-Product: nail`, `X-Heeca-Timestamp: <ms>`, `X-Heeca-Signat
 | POST | `/api/v1/messages` | `{ tenantId, tenantName?, ref?, callbackUrl?, message: { kind: "free", to, body, buttons? } \| { kind: "template", to, name, language, bodyParams, body, buttons? } }` → `202 { id, status: QUEUED\|SKIPPED, reason? }` |
 | GET | `/api/v1/messages/:id` | situação (assinar corpo vazio) |
 | POST/GET | `/api/v1/contacts` | `{ phone, optedOut }` / `?phone=` |
+| POST/GET/DELETE | `/api/v1/channel` | canal próprio do tenant (D11): `{ tenantId, fromPhone, contentSids, active? }` / `?tenantId=` / `?tenantId=`. Sem chamar isto, o tenant usa o número compartilhado de sempre. |
 | GET | `/api/v1/stats` | contagem do mês por status e por estabelecimento |
 | GET/POST | `/api/webhooks/meta` | webhook da Meta (verify token + `X-Hub-Signature-256`) |
 | POST | `/api/webhooks/twilio` | webhook da Twilio, só quando `WHATSAPP_PROVIDER=twilio` (`X-Twilio-Signature`) |

@@ -3,11 +3,19 @@
  * para o Notify ser transparente: o produto monta a mensagem, o Notify só entrega e devolve eventos.
  */
 export type QuickReplyButton = { id: string; title: string };
-export type OutboundMessage = { to: string; body: string; buttons?: QuickReplyButton[] };
+/**
+ * Canal próprio do tenant (D11 — WABA por cliente final via Embedded Signup), resolvido pelo worker
+ * a partir de `TenantChannel` antes de chamar o provedor. Ausente = cai no número/ContentSid
+ * compartilhado da plataforma (comportamento de hoje, sem mudança). `contentSids` é obrigatório se o
+ * envio for `kind: "template"`: cada WABA tem ContentSids próprios mesmo pro mesmo texto de template.
+ */
+export type ChannelOverride = { from: string; contentSids?: Record<string, string> };
+export type OutboundMessage = { to: string; body: string; buttons?: QuickReplyButton[]; channel?: ChannelOverride };
 export type TemplateMessage = {
   to: string; name: string; language: string; bodyParams: string[];
   buttons?: ({ type: "quick_reply"; payload: string } | { type: "url"; text: string })[];
   body: string;
+  channel?: ChannelOverride;
 };
 export type SendResult = { providerMessageId?: string };
 export type ProviderHealth =

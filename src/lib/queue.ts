@@ -70,7 +70,13 @@ export async function processQueue(limit = 20) {
     const m = await db.message.findUniqueOrThrow({ where: { id } });
     try {
       const provider = getProvider();
-      const r = m.kind === "template" ? await provider.sendTemplate(m.payload as unknown as TemplateMessage) : await provider.send(m.payload as unknown as OutboundMessage);
+      // Canal próprio do tenant (D11): se existir e estiver ativo, o envio sai do número/ContentSids
+      // dele em vez do compartilhado da plataforma. Resolvido aqui (envio), não no enqueue, pra
+      // refletir o canal atual mesmo que a mensagem tenha ficado na fila por retry.
+      const tc = await db.tenantChannel.findUnique({ where: { product_tenantId: { product: m.product, tenantId: m.tenantId } } });
+      const channel = tc?.active ? { from: tc.fromPhone, contentSids: tc.contentSids as Record<string, string> } : undefined;
+      const payload = channel ? { ...(m.payload as object), channel } : m.payload;
+      const r = m.kind === "template" ? await provider.sendTemplate(payload as unknown as TemplateMessage) : await provider.send(payload as unknown as OutboundMessage);
       await db.message.update({ where: { id }, data: { status: "SENT", providerMessageId: r.providerMessageId ?? `local_${id}`, sentAt: new Date(), attempts: m.attempts + 1, error: null } });
       sent++;
       // O provedor console não manda status por webhook: simula "sent" para o produto fechar o ciclo.

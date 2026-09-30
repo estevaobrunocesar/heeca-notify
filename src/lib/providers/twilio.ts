@@ -63,7 +63,8 @@ export class TwilioProvider implements WhatsappProvider {
     const to = message.to.replace(/\D/g, "");
     // Sem Content API, botão ad-hoc não existe na Twilio — degrada para lista numerada em texto.
     const body = message.buttons?.length ? `${message.body}\n\n${message.buttons.map((b, i) => `${i + 1}. ${b.title}`).join("\n")}` : message.body;
-    const json = await this.post<{ sid: string }>(`Accounts/${this.accountSid}/Messages.json`, { From: `whatsapp:${this.from}`, To: `whatsapp:+${to}`, Body: body });
+    const from = message.channel?.from ?? this.from;
+    const json = await this.post<{ sid: string }>(`Accounts/${this.accountSid}/Messages.json`, { From: `whatsapp:${from}`, To: `whatsapp:+${to}`, Body: body });
     return { providerMessageId: json.sid };
   }
 
@@ -72,9 +73,15 @@ export class TwilioProvider implements WhatsappProvider {
    * (heeca_confirmacao, heeca_nutri_plano_disponivel…); a Twilio precisa do ContentSid equivalente.
    */
   async sendTemplate(message: TemplateMessage): Promise<SendResult> {
-    const key = `TWILIO_CONTENT_SID_${message.name.toUpperCase()}`;
-    const contentSid = process.env[key];
-    if (!contentSid) throw new Error(`${key} não configurado — cadastre o template "${message.name}" como Content Template na Twilio e aponte o ContentSid aqui.`);
+    // Canal próprio (D11): ContentSid vem do mapa do tenant, não do env global — cada WABA aprova o
+    // próprio template mesmo com texto idêntico. Sem canal próprio, cai no comportamento de sempre.
+    const contentSid = message.channel
+      ? message.channel.contentSids?.[message.name]
+      : process.env[`TWILIO_CONTENT_SID_${message.name.toUpperCase()}`];
+    if (!contentSid) {
+      const onde = message.channel ? `canal próprio (TenantChannel.contentSids["${message.name}"])` : `TWILIO_CONTENT_SID_${message.name.toUpperCase()}`;
+      throw new Error(`ContentSid não configurado para "${message.name}" — cadastre o template na Twilio da WABA certa e aponte em ${onde}.`);
+    }
     const variables: Record<string, string> = {};
     message.bodyParams.forEach((v, i) => { variables[String(i + 1)] = v.replace(/\s*\n\s*/g, " "); });
     // Botão de URL: mesma variável de sufixo cadastrada em scripts/twilio-create-templates.mjs,
@@ -82,8 +89,9 @@ export class TwilioProvider implements WhatsappProvider {
     const urlButton = message.buttons?.find((b) => b.type === "url");
     if (urlButton) variables[String(message.bodyParams.length + 1)] = urlButton.text;
     const to = message.to.replace(/\D/g, "");
+    const from = message.channel?.from ?? this.from;
     const json = await this.post<{ sid: string }>(`Accounts/${this.accountSid}/Messages.json`, {
-      From: `whatsapp:${this.from}`,
+      From: `whatsapp:${from}`,
       To: `whatsapp:+${to}`,
       ContentSid: contentSid,
       ...(message.bodyParams.length ? { ContentVariables: JSON.stringify(variables) } : {}),
