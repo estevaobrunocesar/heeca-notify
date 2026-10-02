@@ -1,6 +1,6 @@
 import type { InboundEvent, OutboundMessage, ProviderHealth, SendResult, TemplateMessage, WhatsappProvider } from "../provider";
 
-const GRAPH = "https://graph.facebook.com/v21.0";
+const GRAPH = process.env.META_GRAPH_URL ?? "https://graph.facebook.com/v21.0";
 
 /**
  * WhatsApp Business Cloud API (Meta) — uma WABA "Heeca", um número (depois um por família).
@@ -70,15 +70,16 @@ export class MetaCloudProvider implements WhatsappProvider {
       for (const change of entry.changes ?? []) {
         const value = change.value;
         if (!value) continue;
+        const pn = value.metadata?.phone_number_id ? { phoneNumberId: value.metadata.phone_number_id } : {};
         for (const msg of value.messages ?? []) {
           const from = "+" + msg.from;
           const contextMessageId = msg.context?.id;
-          if (msg.type === "interactive" && msg.interactive?.button_reply) events.push({ type: "button_reply", from, buttonId: msg.interactive.button_reply.id, providerMessageId: msg.id, contextMessageId });
-          else if (msg.type === "button" && msg.button?.payload) events.push({ type: "button_reply", from, buttonId: msg.button.payload, providerMessageId: msg.id, contextMessageId });
-          else if (msg.type === "text" && msg.text?.body) events.push({ type: "text", from, text: msg.text.body, providerMessageId: msg.id, contextMessageId });
+          if (msg.type === "interactive" && msg.interactive?.button_reply) events.push({ type: "button_reply", from, buttonId: msg.interactive.button_reply.id, providerMessageId: msg.id, contextMessageId, ...pn });
+          else if (msg.type === "button" && msg.button?.payload) events.push({ type: "button_reply", from, buttonId: msg.button.payload, providerMessageId: msg.id, contextMessageId, ...pn });
+          else if (msg.type === "text" && msg.text?.body) events.push({ type: "text", from, text: msg.text.body, providerMessageId: msg.id, contextMessageId, ...pn });
         }
         for (const st of value.statuses ?? []) {
-          if (st.status === "sent" || st.status === "delivered" || st.status === "read" || st.status === "failed") events.push({ type: "status", providerMessageId: st.id, status: st.status, error: st.errors?.[0]?.title });
+          if (st.status === "sent" || st.status === "delivered" || st.status === "read" || st.status === "failed") events.push({ type: "status", providerMessageId: st.id, status: st.status, error: st.errors?.[0]?.title, ...pn });
         }
       }
     }
@@ -87,6 +88,7 @@ export class MetaCloudProvider implements WhatsappProvider {
 }
 
 type MetaWebhookValue = {
+  metadata?: { phone_number_id?: string };
   messages?: { id: string; from: string; type: string; text?: { body: string }; button?: { payload: string; text: string }; interactive?: { type: string; button_reply?: { id: string; title: string } }; context?: { id?: string } }[];
   statuses?: { id: string; status: string; errors?: { title: string }[] }[];
 };

@@ -33,7 +33,7 @@ export interface WhatsappProvider {
  * Evento normalizado (mesmo formato que os produtos já tratam em handleEvent). No callback ao produto vai
  * acrescido de `tenantId`/`ref` da mensagem de origem (roteamento em produtos sem número por estabelecimento).
  */
-export type InboundEvent = ({ tenantId?: string; ref?: string }) & (
+export type InboundEvent = ({ tenantId?: string; ref?: string; phoneNumberId?: string }) & (
   | { type: "button_reply"; from: string; buttonId: string; providerMessageId: string; contextMessageId?: string }
   | { type: "text"; from: string; text: string; providerMessageId: string; contextMessageId?: string }
   | { type: "status"; providerMessageId: string; status: "sent" | "delivered" | "read" | "failed"; error?: string });

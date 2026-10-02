@@ -17,6 +17,8 @@ Cabeçalhos: `X-Heeca-Product: nail`, `X-Heeca-Timestamp: <ms>`, `X-Heeca-Signat
 | GET | `/api/v1/messages/:id` | situação (assinar corpo vazio) |
 | POST/GET | `/api/v1/contacts` | `{ phone, optedOut }` / `?phone=` |
 | POST/GET/DELETE | `/api/v1/channel` | canal próprio do tenant (D11): `{ tenantId, fromPhone, contentSids, active? }` / `?tenantId=` / `?tenantId=`. Sem chamar isto, o tenant usa o número compartilhado de sempre. |
+| POST/GET/DELETE | `/api/v1/connections` | **só o portal** (D11, Embedded Signup): `{ accountRef, code, wabaId, phoneNumberId, targets:[{product,tenantId}] }` conecta o WhatsApp do cliente (token cifrado, webhook assinado, templates criados na WABA dele); sem `code`, só atualiza os `targets`. `GET ?accountRef=` = estado + status dos templates; `DELETE ?accountRef=` desconecta. |
+| POST | `/api/v1/templates` | o produto registra seus templates específicos (`heeca_<produto>_*`) para serem criados também na WABA de cada cliente conectado: `{ templates:[{ name, category:"UTILITY", language:"pt_BR", body, params, buttons?, example, quando? }] }`. |
 | GET | `/api/v1/stats` | contagem do mês por status e por estabelecimento |
 | GET/POST | `/api/webhooks/meta` | webhook da Meta (verify token + `X-Hub-Signature-256`) |
 | POST | `/api/webhooks/twilio` | webhook da Twilio, só quando `WHATSAPP_PROVIDER=twilio` (`X-Twilio-Signature`) |

@@ -32,6 +32,7 @@ model Message {
   body       String // texto final renderizado (log e provedor console)
   payload    Json // OutboundMessage | TemplateMessage, como o produto mandou
   ref        String? // referência do produto (ex.: id do agendamento)
+  phoneNumberId String? // número da Meta que enviou (canal próprio do tenant); null = compartilhado
   callbackUrl String? // para onde devolver status/respostas (assinado com o segredo do produto)
 
   status            MessageStatus @default(QUEUED)
@@ -69,14 +70,49 @@ model TenantChannel {
   id          String   @id @default(cuid())
   product     String
   tenantId    String
-  provider    String   @default("twilio")
+  provider    String   @default("twilio") // twilio | meta
   fromPhone   String // E.164, sem "whatsapp:"
   contentSids Json     @default("{}")
   active      Boolean  @default(true)
+  /// provider "meta": WABA e credenciais vêm da conexão (um número por conta do portal, compartilhado pelos produtos dela)
+  connectionId String?
+  connection   WhatsappConnection? @relation(fields: [connectionId], references: [id], onDelete: SetNull)
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
   @@unique([product, tenantId])
+  @@index([connectionId])
+}
+
+/// WABA + número do cliente conectados pelo Embedded Signup (D11). `accountRef` = Account.id do portal.
+/// O token do negócio fica cifrado (AES-256-GCM, NOTIFY_ENC_KEY) e só este serviço o lê (regra 1).
+model WhatsappConnection {
+  id                String    @id @default(cuid())
+  accountRef        String    @unique
+  wabaId            String
+  phoneNumberId     String    @unique
+  displayPhone      String // E.164
+  verifiedName      String?
+  tokenEnc          String
+  status            String    @default("CONNECTED") // CONNECTED | ERROR
+  lastError         String?
+  templatesSyncedAt DateTime?
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+
+  channels TenantChannel[]
+}
+
+/// Template específico de um produto (heeca_<produto>_*), registrado pelo produto para ser criado
+/// também na WABA de cada cliente conectado. Os unificados vêm de templates.ts.
+model ProductTemplate {
+  id        String   @id @default(cuid())
+  product   String
+  name      String
+  spec      Json
+  updatedAt DateTime @updatedAt
+
+  @@unique([product, name])
 }
 
 /// Eventos recebidos da Meta (respostas e status) e o que foi feito com eles — auditoria.

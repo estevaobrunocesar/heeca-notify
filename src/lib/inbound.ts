@@ -26,7 +26,11 @@ export async function routeEvent(ev: InboundEvent) {
   }
   const alvo = ev.contextMessageId
     ? await db.message.findUnique({ where: { providerMessageId: ev.contextMessageId }, select: { id: true } })
-    : await db.message.findFirst({ where: { to: ev.from, status: { in: ["SENT", "DELIVERED", "READ"] } }, orderBy: { sentAt: "desc" }, select: { id: true } });
+    : await db.message.findFirst({
+        // Número de cliente (Embedded Signup): a resposta é à última mensagem enviada POR AQUELE número; no compartilhado, só às enviadas por ele.
+        where: { to: ev.from, status: { in: ["SENT", "DELIVERED", "READ"] }, phoneNumberId: ev.phoneNumberId && (await db.whatsappConnection.count({ where: { phoneNumberId: ev.phoneNumberId } })) > 0 ? ev.phoneNumberId : null },
+        orderBy: { sentAt: "desc" }, select: { id: true },
+      });
   if (!alvo) {
     await db.inboundEvent.create({ data: { type: ev.type, phone: ev.from, providerMessageId: ev.providerMessageId, payload: ev as object, error: "sem mensagem de origem para rotear" } });
     return { routed: false };

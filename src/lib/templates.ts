@@ -111,3 +111,16 @@ export function validateTemplate(product: string, name: string, bodyParams: stri
   if (esperados !== recebidos) return `${name} espera botões [${esperados}], recebeu [${recebidos}]`;
   return null;
 }
+
+/** Payload da Graph API (`POST /{waba}/message_templates`) para um template — o mesmo para a WABA da Heeca e a de cada cliente. */
+export function toMetaTemplate(t: TemplateSpec) {
+  return {
+    name: t.name, category: t.category, language: t.language, allow_category_change: false,
+    components: [
+      { type: "BODY", text: t.body, example: { body_text: [t.example] } },
+      ...(t.buttons?.length
+        ? [{ type: "BUTTONS", buttons: t.buttons.map((b) => (b.type === "quick_reply" ? { type: "QUICK_REPLY", text: b.text } : { type: "URL", text: b.text, url: `${b.base}{{1}}`, example: [`${b.base}nail/studio-ana`] })) }]
+        : []),
+    ],
+  };
+}

@@ -3,6 +3,8 @@ import { z } from "zod";
 import type { MessageStatus } from "@/generated/prisma/enums";
 import { db } from "./db";
 import { getProvider } from "./providers";
+import { MetaCloudProvider } from "./providers/meta";
+import { decryptSecret } from "./crypto";
 import { isPermanentError, MAX_ATTEMPTS, nextAttempt, normalizePhone } from "./rules";
 import { deliverCallback } from "./callbacks";
 import type { OutboundMessage, TemplateMessage } from "./provider";
@@ -69,15 +71,23 @@ export async function processQueue(limit = 20) {
     if (locked.count === 0) continue; // outro worker pegou
     const m = await db.message.findUniqueOrThrow({ where: { id } });
     try {
-      const provider = getProvider();
+      let provider = getProvider();
       // Canal próprio do tenant (D11): se existir e estiver ativo, o envio sai do número/ContentSids
       // dele em vez do compartilhado da plataforma. Resolvido aqui (envio), não no enqueue, pra
       // refletir o canal atual mesmo que a mensagem tenha ficado na fila por retry.
-      const tc = await db.tenantChannel.findUnique({ where: { product_tenantId: { product: m.product, tenantId: m.tenantId } } });
-      const channel = tc?.active ? { from: tc.fromPhone, contentSids: tc.contentSids as Record<string, string> } : undefined;
+      const tc = await db.tenantChannel.findUnique({ where: { product_tenantId: { product: m.product, tenantId: m.tenantId } }, include: { connection: true } });
+      // Canal Meta (Embedded Signup): envia pela Cloud API com o token DO CLIENTE, mesmo que o provedor global seja outro.
+      // Conexão em erro/ausente = falha clara (nunca cai no número compartilhado: mandaria pelo remetente errado).
+      let phoneNumberId: string | null = null;
+      if (tc?.active && tc.provider === "meta") {
+        if (!tc.connection || tc.connection.status !== "CONNECTED") throw new Error("canal Meta do estabelecimento não configurado ou desconectado");
+        provider = new MetaCloudProvider(tc.connection.phoneNumberId, decryptSecret(tc.connection.tokenEnc));
+        phoneNumberId = tc.connection.phoneNumberId;
+      }
+      const channel = tc?.active && tc.provider !== "meta" ? { from: tc.fromPhone, contentSids: tc.contentSids as Record<string, string> } : undefined;
       const payload = channel ? { ...(m.payload as object), channel } : m.payload;
       const r = m.kind === "template" ? await provider.sendTemplate(payload as unknown as TemplateMessage) : await provider.send(payload as unknown as OutboundMessage);
-      await db.message.update({ where: { id }, data: { status: "SENT", providerMessageId: r.providerMessageId ?? `local_${id}`, sentAt: new Date(), attempts: m.attempts + 1, error: null } });
+      await db.message.update({ where: { id }, data: { status: "SENT", phoneNumberId, providerMessageId: r.providerMessageId ?? `local_${id}`, sentAt: new Date(), attempts: m.attempts + 1, error: null } });
       sent++;
       // O provedor console não manda status por webhook: simula "sent" para o produto fechar o ciclo.
       if (provider.name === "console") await deliverCallback(id, { type: "status", providerMessageId: r.providerMessageId ?? `local_${id}`, status: "sent" });
