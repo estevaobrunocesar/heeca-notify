@@ -16,7 +16,7 @@ const button = z.union([
 ]);
 const spec = z.object({
   name: z.string().regex(/^heeca_[a-z0-9_]+$/),
-  category: z.literal("UTILITY"),
+  category: z.enum(["UTILITY", "MARKETING"]),
   language: z.literal("pt_BR"),
   body: z.string().min(1).max(1024),
   params: z.array(z.string()).max(20),

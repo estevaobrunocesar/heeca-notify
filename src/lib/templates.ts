@@ -18,7 +18,7 @@ export type TemplateButton = { type: "quick_reply"; text: string } | { type: "ur
 
 export type TemplateSpec = {
   name: string;
-  category: "UTILITY";
+  category: "UTILITY" | "MARKETING";
   language: "pt_BR";
   /** Corpo como cadastrado na Meta ({{1}}, {{2}}…). */
   body: string;
