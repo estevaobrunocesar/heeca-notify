@@ -5,7 +5,7 @@ import { db } from "./db";
 import { getProvider } from "./providers";
 import { MetaCloudProvider } from "./providers/meta";
 import { decryptSecret } from "./crypto";
-import { isPermanentError, MAX_ATTEMPTS, nextAttempt, normalizePhone } from "./rules";
+import { isPermanentError, MAX_ATTEMPTS, nextAttempt, normalizePhone, sharedChannelBlock } from "./rules";
 import { deliverCallback } from "./callbacks";
 import type { OutboundMessage, TemplateMessage } from "./provider";
 import { TEMPLATES, validateTemplate } from "./templates";
@@ -39,6 +39,11 @@ export async function enqueue(product: string, input: EnqueueInput) {
     const inicioMes = new Date(); inicioMes.setUTCDate(1); inicioMes.setUTCHours(0, 0, 0, 0);
     const usados = await db.message.count({ where: { product, tenantId: input.tenantId, createdAt: { gte: inicioMes }, status: { notIn: ["SKIPPED", "FAILED"] } } });
     if (usados >= quota) skip = `cota mensal do estabelecimento atingida (${quota})`;
+  }
+  // Canal compartilhado desligado: sem número próprio conectado, nem enfileira (o produto recebe SKIPPED + motivo na hora).
+  if (!skip) {
+    const tc = await db.tenantChannel.findUnique({ where: { product_tenantId: { product, tenantId: input.tenantId } }, include: { connection: { select: { status: true } } } });
+    skip = sharedChannelBlock(process.env.WHATSAPP_PROVIDER ?? "console", tc ? { active: tc.active, provider: tc.provider, connectionStatus: tc.connection?.status } : null);
   }
   if (input.message.kind === "template") {
     const erro = validateTemplate(product, input.message.name, input.message.bodyParams, input.message.buttons ?? []);

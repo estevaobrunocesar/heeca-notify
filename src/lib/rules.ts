@@ -23,3 +23,16 @@ export function normalizePhone(v: string): string | null {
   const s = v.replace(/[^\d+]/g, "");
   return /^\+\d{10,15}$/.test(s) ? s : null;
 }
+
+/**
+ * Com o canal compartilhado desligado (WHATSAPP_PROVIDER=none), só sai mensagem de estabelecimento com número próprio ativo e
+ * conectado. Devolve o motivo para o SKIPPED imediato (o produto vê na resposta do enqueue), ou null se pode enfileirar.
+ */
+export function sharedChannelBlock(
+  providerName: string,
+  channel: { active: boolean; provider: string; connectionStatus?: string | null } | null,
+): string | null {
+  if (providerName.trim().toLowerCase() !== "none") return null;
+  if (channel?.active && channel.provider === "meta" && channel.connectionStatus === "CONNECTED") return null;
+  return "WhatsApp não configurado: o estabelecimento ainda não conectou o próprio número";
+}

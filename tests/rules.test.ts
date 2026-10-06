@@ -1,6 +1,6 @@
 import { describe, it } from "node:test";
 import assert from "node:assert/strict";
-import { BACKOFF_MS, isOptOut, isPermanentError, MAX_ATTEMPTS, nextAttempt, normalizePhone } from "../src/lib/rules";
+import { BACKOFF_MS, isOptOut, isPermanentError, MAX_ATTEMPTS, nextAttempt, normalizePhone, sharedChannelBlock } from "../src/lib/rules";
 import { MetaCloudProvider } from "../src/lib/providers/meta";
 
 describe("fila", () => {
@@ -39,5 +39,25 @@ describe("webhook da Meta → eventos", () => {
     assert.equal(ev[1].type, "text");
     assert.deepEqual(ev[2], { type: "status", providerMessageId: "wamid.out1", status: "delivered", error: undefined });
     assert.equal((ev[3] as { error?: string }).error, "Number not on WhatsApp");
+  });
+});
+
+describe("canal compartilhado desligado (WHATSAPP_PROVIDER=none)", () => {
+  const ok = { active: true, provider: "meta", connectionStatus: "CONNECTED" };
+  it("com outro provedor, nunca bloqueia", () => {
+    assert.equal(sharedChannelBlock("twilio", null), null);
+    assert.equal(sharedChannelBlock("console", null), null);
+    assert.equal(sharedChannelBlock("meta", null), null);
+  });
+  it("com none, só passa estabelecimento com número Meta ativo e conectado", () => {
+    assert.equal(sharedChannelBlock("none", ok), null);
+    assert.equal(sharedChannelBlock(" NONE ", ok), null);
+    assert.match(sharedChannelBlock("none", null) ?? "", /não configurado/);
+    assert.match(sharedChannelBlock("none", { ...ok, active: false }) ?? "", /não configurado/);
+    assert.match(sharedChannelBlock("none", { ...ok, connectionStatus: "ERROR" }) ?? "", /não configurado/);
+    assert.match(sharedChannelBlock("none", { ...ok, provider: "twilio" }) ?? "", /não configurado/);
+  });
+  it("o motivo é erro permanente (não repete)", () => {
+    assert.equal(isPermanentError(sharedChannelBlock("none", null) ?? ""), true);
   });
 });
